@@ -1,27 +1,57 @@
 import pygame
 import os
 from random import randint
+from abc import ABC, abstractmethod
 
 HEIGHT = 600
 WIDTH = 400
 GAP = 150
 
-# Klasa reprezentująca tło
-class Background:
-    def __init__(self, background_width, background_height):
-        self.image = pygame.transform.scale(pygame.image.load(
-            os.path.join('assets/GameObjects', 'background.png')), (background_width, background_height))
-        
-    def display(self, WIN):
-        WIN.blit(self.image, (0, 0))
-
-# Klasa reprezentująca ptaka
-class Bird:
-    def __init__(self, x, y):
+# Klasa abstrakcyjna reprezentująca obiekt w grze
+class GameObject(ABC):
+    
+    def __init__(self, x = 0, y = 0, width = WIDTH, height = HEIGHT):
         self.x = x
         self.y = y
+        self.width = width
+        self.height = height
+
+    @abstractmethod
+    def display(self, WIN):
+        pass
+
+
+# Klasa reprezentująca tło
+class Background(GameObject):
+
+    def __init__(self, x = 0, y = 0, back_width = WIDTH, back_height = HEIGHT):
+
+        super().__init__(x, y, back_width, back_height)
+        self.back_image = pygame.transform.scale(pygame.image.load(
+            os.path.join('assets/GameObjects', 'background.png')), (self.width, self.height))
+        
+    def display(self, WIN):
+        WIN.blit(self.back_image, (self.x, self.y))
+
+class Base(GameObject):
+
+    def __init__(self, x, y, base_width = WIDTH, base_height = 100):
+        super().__init__(x, y , base_width, base_height)
+        self.base_image = pygame.transform.scale(pygame.image.load(
+            os.path.join('assets/GameObjects', 'base.png')), (self.width, self.height))
+
+        
+    def display(self, WIN):
+        WIN.blit(self.base_image, (self.x, self.y))
+
+# Klasa reprezentująca ptaka
+class Bird(GameObject):
+
+    def __init__(self, x, y, bird_width = 42, bird_height = 29):
+        super().__init__(x, y, bird_width, bird_height)
+
         self.bird_image = pygame.transform.scale(
-            pygame.image.load(os.path.join('assets/GameObjects', 'bird-midflip.png')), (42, 29))
+            pygame.image.load(os.path.join('assets/GameObjects', 'bird-midflip.png')), (self.width, self.height))
         self.rect = self.bird_image.get_rect()
         self.vel = -3
     
@@ -36,13 +66,12 @@ class Bird:
     def display(self, WIN):
         WIN.blit(self.bird_image, (self.x, self.y))
 
-class Pipe:
-    def __init__(self, x, y, rotate=False):
-        self.x = x
-        self.y = y
+class Pipe(GameObject):
+    def __init__(self, x, y, rotate = False, pipe_width = 65, pipe_height = 400):
+        super().__init__(x, y, pipe_width, pipe_height)
         self.rotate = rotate
         self.pipe_image = pygame.transform.scale(
-            pygame.image.load(os.path.join('assets/GameObjects', 'pipe.png')), (65, 400))
+            pygame.image.load(os.path.join('assets/GameObjects', 'pipe.png')), (self.width, self.height))
         self.rect = self.pipe_image.get_rect()
 
     def display(self, WIN):
@@ -58,8 +87,9 @@ class Pipe:
 class Main:
     def __init__(self):
         self.WIN = pygame.display.set_mode((WIDTH, HEIGHT))
-        self.background = Background(WIDTH, HEIGHT)
+        self.background = Background(0, 0)
         self.bird = Bird(WIDTH // 2 - 21, HEIGHT // 2)
+        self.base = Base(0, HEIGHT - 100)
         self.pipes = []
         self.generate_pipes()
     
@@ -71,9 +101,11 @@ class Main:
     def display(self):
         self.background.display(self.WIN)
         self.bird.display(self.WIN)
+        	
         for pipe_pair in self.pipes:
             pipe_pair[0].display(self.WIN)
             pipe_pair[1].display(self.WIN)
+        self.base.display(self.WIN)
 
     def main(self):
         pygame.init()
