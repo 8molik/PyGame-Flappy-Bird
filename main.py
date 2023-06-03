@@ -3,9 +3,16 @@ import os
 from random import randint
 from abc import ABC, abstractmethod
 
+# Global variables
+
 HEIGHT = 600
 WIDTH = 400
 GAP = 150
+
+PIPE_WIDTH = 65
+PIPE_HEIGHT = 400
+BIRD_WIDTH = 42
+BIRD_HEIGHT = 29
 
 # Klasa abstrakcyjna reprezentująca obiekt w grze
 class GameObject(ABC):
@@ -47,7 +54,7 @@ class Base(GameObject):
 # Klasa reprezentująca ptaka
 class Bird(GameObject):
 
-    def __init__(self, x, y, bird_width = 42, bird_height = 29):
+    def __init__(self, x, y, bird_width = BIRD_WIDTH, bird_height = BIRD_HEIGHT):
         super().__init__(x, y, bird_width, bird_height)
 
         self.bird_image = pygame.transform.scale(
@@ -67,7 +74,7 @@ class Bird(GameObject):
         WIN.blit(self.bird_image, (self.x, self.y))
 
 class Pipe(GameObject):
-    def __init__(self, x, y, rotate = False, pipe_width = 65, pipe_height = 400):
+    def __init__(self, x, y, rotate = False, pipe_width = PIPE_WIDTH, pipe_height = PIPE_HEIGHT):
         super().__init__(x, y, pipe_width, pipe_height)
         self.rotate = rotate
         self.pipe_image = pygame.transform.scale(
@@ -94,8 +101,8 @@ class Main:
         self.generate_pipes()
     
     def generate_pipes(self):
-        i_top = randint(-300, 0)
-        i_bot = i_top + GAP + 400
+        i_top = randint(-350, -100)
+        i_bot = i_top + GAP + PIPE_HEIGHT
         self.pipes.append((Pipe(WIDTH, i_top, True), Pipe(WIDTH, i_bot)))
 
     def display(self):
@@ -108,6 +115,7 @@ class Main:
         self.base.display(self.WIN)
 
     def main(self):
+
         pygame.init()
         pygame.display.set_caption("Flappy Bird")
 
@@ -128,8 +136,14 @@ class Main:
                 pipe_pair[0].move()
                 pipe_pair[1].move()
 
+            
+
+            if self.pipes[0][0].x == WIDTH // 2:
+
+                self.generate_pipes()
+
             if self.pipes[0][0].x < -65:
-                self.pipes.pop(0)
+                self.pipes.pop(0) 
                 self.generate_pipes()
 
             self.display()
