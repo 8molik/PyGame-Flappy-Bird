@@ -3,32 +3,30 @@ import os
 from random import randint
 from abc import ABC, abstractmethod
 
-NUMBERS = { "0" : pygame.image.load(os.path.join('assets/UI/Numbers', '0.png')),
-            "1" : pygame.image.load(os.path.join('assets/UI/Numbers', '1.png')),
-            "2" : pygame.image.load(os.path.join('assets/UI/Numbers', '2.png')),
-            "3" : pygame.image.load(os.path.join('assets/UI/Numbers', '3.png')),
-            "4" : pygame.image.load(os.path.join('assets/UI/Numbers', '4.png')),
-            "5" : pygame.image.load(os.path.join('assets/UI/Numbers', '5.png')),
-            "6" : pygame.image.load(os.path.join('assets/UI/Numbers', '6.png')),
-            "7" : pygame.image.load(os.path.join('assets/UI/Numbers', '7.png')),
-            "8" : pygame.image.load(os.path.join('assets/UI/Numbers', '8.png')),
-            "9" : pygame.image.load(os.path.join('assets/UI/Numbers', '9.png')) }
+NUMBERS = {"0" : pygame.image.load(os.path.join('assets/UI/Numbers', '0.png')),
+           "1" : pygame.image.load(os.path.join('assets/UI/Numbers', '1.png')),
+           "2" : pygame.image.load(os.path.join('assets/UI/Numbers', '2.png')),
+           "3" : pygame.image.load(os.path.join('assets/UI/Numbers', '3.png')),
+           "4" : pygame.image.load(os.path.join('assets/UI/Numbers', '4.png')),
+           "5" : pygame.image.load(os.path.join('assets/UI/Numbers', '5.png')),
+           "6" : pygame.image.load(os.path.join('assets/UI/Numbers', '6.png')),
+           "7" : pygame.image.load(os.path.join('assets/UI/Numbers', '7.png')),
+           "8" : pygame.image.load(os.path.join('assets/UI/Numbers', '8.png')),
+           "9" : pygame.image.load(os.path.join('assets/UI/Numbers', '9.png'))}
 
-pygame.font.init()
 # Global variables
-#FPS = 180
+FPS = 60
 WHITE = (255, 255, 255)
 HEIGHT = 600
 WIDTH = 400
 GAP = 150
 
-#FPS = 60
 PIPE_WIDTH = 65
 PIPE_HEIGHT = 400
 BIRD_WIDTH = 42
 BIRD_HEIGHT = 29
-
-FONT = pygame.font.SysFont('sans', 40)
+NUMBER_HEIGHT = 36
+NUMBER_WIDTH = 24
 
 PIPE_HIT = pygame.USEREVENT + 1
 
@@ -36,21 +34,35 @@ class Score:
     def __init__(self, score = 0):
         self.score = score
         self.number = NUMBERS['0']
-        self.font = FONT.render(str(self.score), 1, WHITE)
 
     def update_score(self):
         self.score += 1
-        self.font = FONT.render(str(self.score), 1, WHITE)
+        self.number = self.generate_number()
+
+    def generate_number(self):
+        num = str(self.score)
+
+        images = []  # Lista obrazów reprezentujących cyfry składające liczbę
+
+        for digit in num:
+            image = NUMBERS[digit].convert_alpha()  # Konwersja na format z alfą
+            image.set_alpha(255)  # Ustawienie maksymalnej wartości przezroczystości
+            images.append(image)
+    
+        # Tworzenie jednego obrazu zawierającego wszystkie cyfry obok siebie
+        number_surface = pygame.Surface((len(num) * NUMBER_WIDTH, NUMBER_HEIGHT), pygame.SRCALPHA)
+        x_offset = 0
+        for image in images:
+            number_surface.blit(image, (x_offset, 0))
+            x_offset += image.get_width()
+
+        return number_surface
 
     def display_score(self, WIN):
-        WIN.blit(self.font, (30, 30))
         WIN.blit(self.number, (WIDTH // 2, 50))
-
-
 
 # Klasa abstrakcyjna reprezentująca obiekt w grze
 class GameObject(ABC):
-    
     def __init__(self, x = 0, y = 0, width = WIDTH, height = HEIGHT):
         self.x = x
         self.y = y
@@ -65,10 +77,8 @@ class GameObject(ABC):
     def get_rect(self):
         pass
 
-
 # Klasa reprezentująca tło
 class Background(GameObject):
-
     def __init__(self, x = 0, y = 0, back_width = WIDTH, back_height = HEIGHT):
         super().__init__(x, y, back_width, back_height)
         self.back_image = pygame.transform.scale(pygame.image.load(
@@ -81,7 +91,6 @@ class Background(GameObject):
         pass
 
 class Base(GameObject):
-
     def __init__(self, x, y, base_width = WIDTH, base_height = 100):
         super().__init__(x, y , base_width, base_height)
         self.base_image = pygame.transform.scale(pygame.image.load(
@@ -107,11 +116,11 @@ class Bird(GameObject):
     
     def jump(self):
         if self.y > 0:
-            self.vel = -2.5
+            self.vel = -8
     
     def update(self):
         self.y += self.vel
-        self.vel += 0.05
+        self.vel += 0.5
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
     
     def display(self, WIN):
@@ -135,7 +144,7 @@ class Pipe(GameObject):
             WIN.blit(self.pipe_image, (self.x, self.y))
 
     def move(self):
-        self.x -= 0.5
+        self.x -= 1.5
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
     def get_rect(self):
@@ -172,9 +181,6 @@ class Main:
         if bird_rect.colliderect(self.base.get_rect()):
             pass
 
-        
-            
-
     def display(self):
         self.background.display(self.WIN)
         self.bird.display(self.WIN)
@@ -188,7 +194,7 @@ class Main:
         pipes_to_remove = []
 
         for i in range(len(self.pipes)):
-            if self.pipes[i][0].x == WIDTH // 2:
+            if self.pipes[i][0].x == WIDTH // 2 - 1:
                 self.generate_pipes()
                 self.score.update_score()
             elif self.pipes[i][0].x < -65:
@@ -203,13 +209,13 @@ class Main:
         pygame.init()
         pygame.display.set_caption("Flappy Bird")
 
-        #clock = pygame.time.Clock()
+        clock = pygame.time.Clock()
 
         run = True
 
         while run:
             bird_rect = self.bird.get_rect()
-            #clock.tick(FPS)
+            
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     run = False
@@ -224,16 +230,13 @@ class Main:
                 pipe_pair[0].move()
                 pipe_pair[1].move()
             
-            self.handle_hits(bird_rect)
-
-
-            # handle pipes
-            
+            self.handle_hits(bird_rect)            
             self.handle_pipes()
-            self.display()
             self.bird.update()
+            self.display()
 
             pygame.display.update()
+            clock.tick(FPS)
 
 game = Main()
 game.main()
