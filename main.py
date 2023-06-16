@@ -30,6 +30,27 @@ NUMBER_WIDTH = 24
 
 PIPE_HIT = pygame.USEREVENT + 1
 
+BIRD = [pygame.transform.scale(
+            pygame.image.load(os.path.join('assets/GameObjects', 'bird-downflip.png')), (BIRD_WIDTH, BIRD_HEIGHT)),
+        pygame.transform.scale(
+            pygame.image.load(os.path.join('assets/GameObjects', 'bird-midflip.png')), (BIRD_WIDTH, BIRD_HEIGHT)),
+        pygame.transform.scale(
+            pygame.image.load(os.path.join('assets/GameObjects', 'bird-upflip.png')), (BIRD_WIDTH, BIRD_HEIGHT))]       
+
+class Menu:
+    def __init__(self, x = WIDTH//4, y = HEIGHT // 4):
+        self.height = HEIGHT
+        self.width = WIDTH
+        self.x = x
+        self.y = y
+        self.start_image = pygame.transform.scale(
+            pygame.image.load(os.path.join('assets/UI', 'message.png')), (WIDTH//2 + 30, HEIGHT//2 + 25))
+
+    def display_start(self, WIN):
+        WIN.blit(self.start_image, (WIDTH // 4 - 15, HEIGHT // 4  - BIRD_HEIGHT - 27))
+
+
+
 class Score:
     def __init__(self, score = 0):
         self.score = score
@@ -77,13 +98,12 @@ class GameObject(ABC):
     def get_rect(self):
         pass
 
-# Klasa reprezentująca tło
 class Background(GameObject):
     def __init__(self, x = 0, y = 0, back_width = WIDTH, back_height = HEIGHT):
         super().__init__(x, y, back_width, back_height)
         self.back_image = pygame.transform.scale(pygame.image.load(
             os.path.join('assets/GameObjects', 'background.png')), (self.width, self.height))
-        
+
     def display(self, WIN):
         WIN.blit(self.back_image, (self.x, self.y))
 
@@ -103,28 +123,42 @@ class Base(GameObject):
     def get_rect(self):
         return self.rect
 
-# Klasa reprezentująca ptaka
 class Bird(GameObject):
-
     def __init__(self, x, y, bird_width = BIRD_WIDTH, bird_height = BIRD_HEIGHT):
         super().__init__(x, y, bird_width, bird_height)
 
-        self.bird_image = pygame.transform.scale(
-            pygame.image.load(os.path.join('assets/GameObjects', 'bird-midflip.png')), (self.width, self.height))
+        self.bird_image = BIRD     
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.vel = 0
+        self.image_index = 0
+        self.image = BIRD[0]
     
-    def jump(self):
+    def jump(self): 
         if self.y > 0:
             self.vel = -8
+        
     
     def update(self):
         self.y += self.vel
         self.vel += 0.5
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+
+        if self.vel < -4:
+            self.image_index = 2
+        elif self.vel < 0:
+            self.image_index = 1
+        else:
+            self.image_index = 0
+
+        self.image = self.bird_image[self.image_index]
+        self.image = pygame.transform.rotate(self.image, self.vel * -2)
+        
+        if self.y >= (HEIGHT - 100 - self.height):
+            self.vel = 0
+
     
     def display(self, WIN):
-        WIN.blit(self.bird_image, (self.x, self.y))
+        WIN.blit(self.image, (self.x, self.y))
 
     def get_rect(self):
         return self.rect
@@ -150,8 +184,6 @@ class Pipe(GameObject):
     def get_rect(self):
         return self.rect
 
-
-# Główna klasa gry
 class Main:
     def __init__(self):
         self.WIN = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -161,6 +193,8 @@ class Main:
         self.pipes = []
         self.generate_pipes()
         self.score = Score()
+        self.start_screen = Menu()
+        self.game_started = False
     
     def generate_pipes(self):
         i_top = randint(-350, -100)
@@ -175,20 +209,27 @@ class Main:
             pipe_bot_rect = pipe_bot.get_rect()
                 
             if bird_rect.colliderect(pipe_top_rect):
-                pass
+                print("hit")
             if bird_rect.colliderect(pipe_bot_rect):
-                pass
+                print("g")
         if bird_rect.colliderect(self.base.get_rect()):
             pass
 
     def display(self):
-        self.background.display(self.WIN)
-        self.bird.display(self.WIN)
-        for pipe_pair in self.pipes:
-            pipe_pair[0].display(self.WIN)
-            pipe_pair[1].display(self.WIN)
-        self.base.display(self.WIN)
-        self.score.display_score(self.WIN)
+        if self.game_started:
+            self.background.display(self.WIN)
+            self.bird.display(self.WIN)
+            for pipe_pair in self.pipes:
+                pipe_pair[0].display(self.WIN)
+                pipe_pair[1].display(self.WIN)
+            self.base.display(self.WIN)
+            self.score.display_score(self.WIN)
+        else:
+            self.background.display(self.WIN)
+            self.base.display(self.WIN)
+            self.start_screen.display_start(self.WIN)
+            self.bird.display(self.WIN)
+            
 
     def handle_pipes(self):
         pipes_to_remove = []
@@ -223,16 +264,21 @@ class Main:
                 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE:
-                        #bird_rect = pygame.Rect()
-                        self.bird.jump()
+                        if not self.game_started:  # Jeśli gra się nie rozpoczęła, rozpocznij ją po naciśnięciu spacji
+                            self.game_started = True
+                            self.bird.jump()
+                        else:
+                            self.bird.jump()
 
-            for pipe_pair in self.pipes:
-                pipe_pair[0].move()
-                pipe_pair[1].move()
+            if self.game_started:
+                for pipe_pair in self.pipes:
+                    pipe_pair[0].move()
+                    pipe_pair[1].move()
+                
+                self.handle_hits(bird_rect)            
+                self.handle_pipes()
+                self.bird.update()
             
-            self.handle_hits(bird_rect)            
-            self.handle_pipes()
-            self.bird.update()
             self.display()
 
             pygame.display.update()
