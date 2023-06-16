@@ -3,8 +3,21 @@ import os
 from random import randint
 from abc import ABC, abstractmethod
 
-# Global variables
+NUMBERS = { "0" : pygame.image.load(os.path.join('assets/UI/Numbers', '0.png')),
+            "1" : pygame.image.load(os.path.join('assets/UI/Numbers', '1.png')),
+            "2" : pygame.image.load(os.path.join('assets/UI/Numbers', '2.png')),
+            "3" : pygame.image.load(os.path.join('assets/UI/Numbers', '3.png')),
+            "4" : pygame.image.load(os.path.join('assets/UI/Numbers', '4.png')),
+            "5" : pygame.image.load(os.path.join('assets/UI/Numbers', '5.png')),
+            "6" : pygame.image.load(os.path.join('assets/UI/Numbers', '6.png')),
+            "7" : pygame.image.load(os.path.join('assets/UI/Numbers', '7.png')),
+            "8" : pygame.image.load(os.path.join('assets/UI/Numbers', '8.png')),
+            "9" : pygame.image.load(os.path.join('assets/UI/Numbers', '9.png')) }
 
+pygame.font.init()
+# Global variables
+#FPS = 180
+WHITE = (255, 255, 255)
 HEIGHT = 600
 WIDTH = 400
 GAP = 150
@@ -15,7 +28,25 @@ PIPE_HEIGHT = 400
 BIRD_WIDTH = 42
 BIRD_HEIGHT = 29
 
+FONT = pygame.font.SysFont('sans', 40)
+
 PIPE_HIT = pygame.USEREVENT + 1
+
+class Score:
+    def __init__(self, score = 0):
+        self.score = score
+        self.number = NUMBERS['0']
+        self.font = FONT.render(str(self.score), 1, WHITE)
+
+    def update_score(self):
+        self.score += 1
+        self.font = FONT.render(str(self.score), 1, WHITE)
+
+    def display_score(self, WIN):
+        WIN.blit(self.font, (30, 30))
+        WIN.blit(self.number, (WIDTH // 2, 50))
+
+
 
 # Klasa abstrakcyjna reprezentująca obiekt w grze
 class GameObject(ABC):
@@ -120,6 +151,7 @@ class Main:
         self.base = Base(0, HEIGHT - 100)
         self.pipes = []
         self.generate_pipes()
+        self.score = Score()
     
     def generate_pipes(self):
         i_top = randint(-350, -100)
@@ -132,16 +164,16 @@ class Main:
             pipe_top, pipe_bot = pipe_pair
             pipe_top_rect = pipe_top.get_rect()
             pipe_bot_rect = pipe_bot.get_rect()
-            
+                
             if bird_rect.colliderect(pipe_top_rect):
-                print("Hittop")
+                pass
             if bird_rect.colliderect(pipe_bot_rect):
-                print("Hitbot")
+                pass
         if bird_rect.colliderect(self.base.get_rect()):
-            print("Base")
-            
-            
+            pass
 
+        
+            
 
     def display(self):
         self.background.display(self.WIN)
@@ -150,6 +182,7 @@ class Main:
             pipe_pair[0].display(self.WIN)
             pipe_pair[1].display(self.WIN)
         self.base.display(self.WIN)
+        self.score.display_score(self.WIN)
 
     def handle_pipes(self):
         pipes_to_remove = []
@@ -157,6 +190,7 @@ class Main:
         for i in range(len(self.pipes)):
             if self.pipes[i][0].x == WIDTH // 2:
                 self.generate_pipes()
+                self.score.update_score()
             elif self.pipes[i][0].x < -65:
                 pipes_to_remove.append(self.pipes[i])
 
