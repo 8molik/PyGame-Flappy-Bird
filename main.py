@@ -28,7 +28,7 @@ BIRD_HEIGHT = 29
 NUMBER_HEIGHT = 36
 NUMBER_WIDTH = 24
 
-PIPE_HIT = pygame.USEREVENT + 1
+HIT = pygame.USEREVENT + 1
 
 BIRD = [pygame.transform.scale(
             pygame.image.load(os.path.join('assets/GameObjects', 'bird-downflip.png')), (BIRD_WIDTH, BIRD_HEIGHT)),
@@ -45,11 +45,14 @@ class Menu:
         self.y = y
         self.start_image = pygame.transform.scale(
             pygame.image.load(os.path.join('assets/UI', 'message.png')), (WIDTH//2 + 30, HEIGHT//2 + 25))
+        self.end_image = pygame.transform.scale(
+            pygame.image.load(os.path.join('assets/UI', 'gameover.png')), (192, 42))
 
     def display_start(self, WIN):
-        WIN.blit(self.start_image, (WIDTH // 4 - 15, HEIGHT // 4  - BIRD_HEIGHT - 27))
-
-
+        WIN.blit(self.start_image, (WIDTH // 4 - 15, HEIGHT // 4  - BIRD_HEIGHT * 2 + 2))
+    
+    def display_end(self, WIN):
+        WIN.blit(self.end_image, (WIDTH // 4, HEIGHT // 4))
 
 class Score:
     def __init__(self, score = 0):
@@ -76,11 +79,10 @@ class Score:
         for image in images:
             number_surface.blit(image, (x_offset, 0))
             x_offset += image.get_width()
-
         return number_surface
 
     def display_score(self, WIN):
-        WIN.blit(self.number, (WIDTH // 2, 50))
+        WIN.blit(self.number, (WIDTH // 2-10, 50))
 
 # Klasa abstrakcyjna reprezentująca obiekt w grze
 class GameObject(ABC):
@@ -138,11 +140,12 @@ class Bird(GameObject):
             self.vel = -8
         
     
-    def update(self):
+    def update(self, x = False):
         self.y += self.vel
         self.vel += 0.5
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
+        #obsługa animacji skoku
         if self.vel < -4:
             self.image_index = 2
         elif self.vel < 0:
@@ -152,6 +155,9 @@ class Bird(GameObject):
 
         self.image = self.bird_image[self.image_index]
         self.image = pygame.transform.rotate(self.image, self.vel * -2)
+
+        if x:
+            self.image = pygame.transform.rotate(self.image, -90)
         
         if self.y >= (HEIGHT - 100 - self.height):
             self.vel = 0
@@ -195,6 +201,7 @@ class Main:
         self.score = Score()
         self.start_screen = Menu()
         self.game_started = False
+        self.game_ended = False
     
     def generate_pipes(self):
         i_top = randint(-350, -100)
@@ -209,11 +216,11 @@ class Main:
             pipe_bot_rect = pipe_bot.get_rect()
                 
             if bird_rect.colliderect(pipe_top_rect):
-                print("hit")
+                pygame.event.post(pygame.event.Event(HIT))
             if bird_rect.colliderect(pipe_bot_rect):
-                print("g")
+                pygame.event.post(pygame.event.Event(HIT))
         if bird_rect.colliderect(self.base.get_rect()):
-            pass
+            pygame.event.post(pygame.event.Event(HIT))
 
     def display(self):
         if self.game_started:
@@ -229,7 +236,9 @@ class Main:
             self.base.display(self.WIN)
             self.start_screen.display_start(self.WIN)
             self.bird.display(self.WIN)
-            
+        if self.game_ended:
+            self.start_screen.display_end(self.WIN)
+        pygame.display.update()
 
     def handle_pipes(self):
         pipes_to_remove = []
@@ -269,19 +278,25 @@ class Main:
                             self.bird.jump()
                         else:
                             self.bird.jump()
+                        if self.game_ended:
+                            self.__init__()
 
-            if self.game_started:
+                if event.type == HIT:
+                    self.bird.update(True)
+                    self.game_ended = True
+
+            if self.game_started  and not self.game_ended:
                 for pipe_pair in self.pipes:
                     pipe_pair[0].move()
                     pipe_pair[1].move()
                 
-                self.handle_hits(bird_rect)            
+                self.handle_hits(bird_rect)
                 self.handle_pipes()
                 self.bird.update()
             
             self.display()
 
-            pygame.display.update()
+            
             clock.tick(FPS)
 
 game = Main()
