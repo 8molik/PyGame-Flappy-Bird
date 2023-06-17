@@ -5,17 +5,6 @@ from abc import ABC, abstractmethod
 
 pygame.mixer.init()
 
-NUMBERS = {"0" : pygame.image.load(os.path.join('assets/UI/Numbers', '0.png')),
-           "1" : pygame.image.load(os.path.join('assets/UI/Numbers', '1.png')),
-           "2" : pygame.image.load(os.path.join('assets/UI/Numbers', '2.png')),
-           "3" : pygame.image.load(os.path.join('assets/UI/Numbers', '3.png')),
-           "4" : pygame.image.load(os.path.join('assets/UI/Numbers', '4.png')),
-           "5" : pygame.image.load(os.path.join('assets/UI/Numbers', '5.png')),
-           "6" : pygame.image.load(os.path.join('assets/UI/Numbers', '6.png')),
-           "7" : pygame.image.load(os.path.join('assets/UI/Numbers', '7.png')),
-           "8" : pygame.image.load(os.path.join('assets/UI/Numbers', '8.png')),
-           "9" : pygame.image.load(os.path.join('assets/UI/Numbers', '9.png'))}
-
 # Global variables
 FPS = 60
 WHITE = (255, 255, 255)
@@ -23,32 +12,18 @@ HEIGHT = 600
 WIDTH = 400
 GAP = 140
 
+PIPE_SPEED = 1.5
 PIPE_WIDTH, PIPE_HEIGHT = 65, 400
 BIRD_WIDTH, BIRD_HEIGHT = 42, 29
 NUMBER_WIDTH, NUMBER_HEIGHT = 24, 36
 GAMEOV_WIDTH, GAMEOV_HEIGHT = 192, 42
 BUTTON_WIDTH, BUTTON_HEIGHT = 107, 37
+BASE_WIDTH, BASE_HEIGHT = WIDTH, 100
 START_WIDTH, START_HEIGHT = WIDTH // 2 + 30, HEIGHT // 2 + 25
 
 HIT = pygame.USEREVENT + 1
 
-BIRD = [pygame.transform.scale(
-            pygame.image.load(os.path.join('assets/GameObjects', 'bird-downflip.png')), (BIRD_WIDTH, BIRD_HEIGHT)),
-        pygame.transform.scale(
-            pygame.image.load(os.path.join('assets/GameObjects', 'bird-midflip.png')), (BIRD_WIDTH, BIRD_HEIGHT)),
-        pygame.transform.scale(
-            pygame.image.load(os.path.join('assets/GameObjects', 'bird-upflip.png')), (BIRD_WIDTH, BIRD_HEIGHT))]       
-
-import pygame
-import os
-
-SOUNDS = {'swoosh': pygame.mixer.Sound(os.path.join('assets/SoundEffects', 'swoosh.wav')),
-          'die': pygame.mixer.Sound(os.path.join('assets/SoundEffects', 'die.wav')),
-          'hit': pygame.mixer.Sound(os.path.join('assets/SoundEffects', 'hit.wav')),
-          'point': pygame.mixer.Sound(os.path.join('assets/SoundEffects', 'point.wav')),
-          'wing': pygame.mixer.Sound(os.path.join('assets/SoundEffects', 'wing.wav'))}
-
-# Klasa abstrakcyjna reprezentująca obiekt w grze
+# Abstract class representing Game Object
 class GameObject(ABC):
     def __init__(self, x = 0, y = 0, width = WIDTH, height = HEIGHT):
         self.x = x
@@ -64,6 +39,7 @@ class GameObject(ABC):
     def get_rect(self):
         pass
 
+# Background
 class Background(GameObject):
     def __init__(self, x = 0, y = 0, back_width = WIDTH, back_height = HEIGHT):
         super().__init__(x, y, back_width, back_height)
@@ -76,8 +52,9 @@ class Background(GameObject):
     def get_rect(self):
         pass
 
+# Base of the screen
 class Base(GameObject):
-    def __init__(self, x, y, base_width = WIDTH, base_height = 100):
+    def __init__(self, x, y, base_width = BASE_WIDTH, base_height = BASE_HEIGHT):
         super().__init__(x, y , base_width, base_height)
         self.base_image = pygame.transform.scale(pygame.image.load(
             os.path.join('assets/GameObjects', 'base.png')), (self.width, self.height))
@@ -89,39 +66,44 @@ class Base(GameObject):
     def get_rect(self):
         return self.rect
 
+# Bird/player
 class Bird(GameObject):
     def __init__(self, x, y, bird_width = BIRD_WIDTH, bird_height = BIRD_HEIGHT):
         super().__init__(x, y, bird_width, bird_height)
-        self.bird_image = BIRD     
+        self.bird_image = {'downflip': pygame.transform.scale(
+                                          pygame.image.load(os.path.join('assets/GameObjects', 'bird-downflip.png')), (BIRD_WIDTH, BIRD_HEIGHT)),
+                           'midflip': pygame.transform.scale(
+                                          pygame.image.load(os.path.join('assets/GameObjects', 'bird-midflip.png')), (BIRD_WIDTH, BIRD_HEIGHT)),
+                           'upflip': pygame.transform.scale(
+                                          pygame.image.load(os.path.join('assets/GameObjects', 'bird-upflip.png')), (BIRD_WIDTH, BIRD_HEIGHT))}
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
         self.vel = 0
-        self.image_index = 0
-        self.image = BIRD[0]
+        self.image_name = 'downflip'
+        self.image = self.bird_image[self.image_name]
     
     def jump(self): 
         if self.y > 0:
             self.vel = -8
-
-    def update(self, falling = False):
+        
+    def update(self):
         self.y += self.vel
         self.vel += 0.5
 
         #Jump anitmation
         if self.vel < -4:
-            self.image_index = 2
+            self.image_name = 'upflip'
         elif self.vel < 0:
-            self.image_index = 1
+            self.image_name = 'midflip'
         else:
-            self.image_index = 0
-        self.image = self.bird_image[self.image_index]
-        self.image = pygame.transform.rotate(self.image, self.vel * -2)
+            self.image_name = 'downflip'
 
-        if falling:
-            self.image = pygame.transform.rotate(self.image, -90)
-        
-        if self.y >= (HEIGHT - 100 - self.height):
+        self.image = self.bird_image[self.image_name]
+        self.image = pygame.transform.rotate(self.image, self.vel * -2)
+            
+        if self.y >= (HEIGHT - BASE_HEIGHT - self.height):
             self.vel = 0
 
+        # Updates current bird rect location
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
     
     def display(self, WIN):
@@ -130,6 +112,7 @@ class Bird(GameObject):
     def get_rect(self):
         return self.rect
 
+# Pipe
 class Pipe(GameObject):
     def __init__(self, x, y, rotate = False, pipe_width = PIPE_WIDTH, pipe_height = PIPE_HEIGHT):
         super().__init__(x, y, pipe_width, pipe_height)
@@ -145,27 +128,39 @@ class Pipe(GameObject):
             WIN.blit(self.pipe_image, (self.x, self.y))
 
     def move(self):
-        self.x -= 1.5
+        self.x -= PIPE_SPEED
         self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
 
     def get_rect(self):
         return self.rect
-    
+
+# Sound
 class Sound:
     def __init__(self):
-        self.sound = SOUNDS
-    
+        self.sound = {'swoosh': pygame.mixer.Sound(os.path.join('assets/SoundEffects', 'swoosh.wav')),
+                      'die': pygame.mixer.Sound(os.path.join('assets/SoundEffects', 'die.wav')),
+                      'hit': pygame.mixer.Sound(os.path.join('assets/SoundEffects', 'hit.wav')),
+                      'point': pygame.mixer.Sound(os.path.join('assets/SoundEffects', 'point.wav')),
+                      'wing': pygame.mixer.Sound(os.path.join('assets/SoundEffects', 'wing.wav'))}
+                
     def play_sound(self, name):
         self.sound[name].play()
 
-#ADD sound
-# add highscore
-# add animation restart/gameover
-    
+# Score   
 class Score:
     def __init__(self, score = 0):
         self.score = score
-        self.number = NUMBERS['0']
+        self.numbers = {"0" : pygame.image.load(os.path.join('assets/UI/Numbers', '0.png')),
+                        "1" : pygame.image.load(os.path.join('assets/UI/Numbers', '1.png')),
+                        "2" : pygame.image.load(os.path.join('assets/UI/Numbers', '2.png')),
+                        "3" : pygame.image.load(os.path.join('assets/UI/Numbers', '3.png')),
+                        "4" : pygame.image.load(os.path.join('assets/UI/Numbers', '4.png')),
+                        "5" : pygame.image.load(os.path.join('assets/UI/Numbers', '5.png')),
+                        "6" : pygame.image.load(os.path.join('assets/UI/Numbers', '6.png')),
+                        "7" : pygame.image.load(os.path.join('assets/UI/Numbers', '7.png')),
+                        "8" : pygame.image.load(os.path.join('assets/UI/Numbers', '8.png')),
+                        "9" : pygame.image.load(os.path.join('assets/UI/Numbers', '9.png'))}
+        self.number = self.numbers['0']
 
     def update_score(self):
         self.score += 1
@@ -173,12 +168,11 @@ class Score:
 
     def generate_number(self):
         num = str(self.score)
-
         # List of number pictures
         images = []  
 
         for digit in num:
-            image = NUMBERS[digit].convert_alpha() 
+            image = self.numbers[digit].convert_alpha() 
             image.set_alpha(255)
             images.append(image)
     
@@ -193,6 +187,7 @@ class Score:
     def display_score(self, WIN):
         WIN.blit(self.number, (WIDTH // 2 - 10, 50))
 
+# Menu - starting and ending screens
 class Menu:
     def __init__(self):
         self.x =  WIDTH // 4
@@ -232,20 +227,21 @@ class Main:
     def generate_pipes(self):
         i_top = randint(-350, -100)
         i_bot = i_top + GAP + PIPE_HEIGHT
+
         # Pair of top pipe and bottom pipe
         self.pipes.append((Pipe(WIDTH, i_top, True), Pipe(WIDTH, i_bot)))
     
     def handle_hits(self, bird_rect):
-        for pipe_pair in self.pipes:
-            pipe_top, pipe_bot = pipe_pair
-            pipe_top_rect = pipe_top.get_rect()
-            pipe_bot_rect = pipe_bot.get_rect()
-    
-            if bird_rect.colliderect(pipe_top_rect) or bird_rect.colliderect(pipe_bot_rect):
-                pygame.event.post(pygame.event.Event(HIT))
-                
         if bird_rect.colliderect(self.base.get_rect()):
             pygame.event.post(pygame.event.Event(HIT))
+        else: 
+            for pipe_pair in self.pipes:
+                pipe_top, pipe_bot = pipe_pair
+                pipe_top_rect = pipe_top.get_rect()
+                pipe_bot_rect = pipe_bot.get_rect()
+        
+                if bird_rect.colliderect(pipe_top_rect) or bird_rect.colliderect(pipe_bot_rect):
+                    pygame.event.post(pygame.event.Event(HIT))       
 
     def display(self):
         self.background.display(self.WIN)
@@ -264,7 +260,6 @@ class Main:
 
     def handle_pipes(self):
         pipes_to_remove = []
-
         for i in range(len(self.pipes)):
             if self.pipes[i][0].x == WIDTH // 2 - 1:
                 self.generate_pipes()
@@ -275,7 +270,6 @@ class Main:
 
         for pipe in pipes_to_remove:
             self.pipes.remove(pipe)    
-        
 
     def main(self):
         pygame.init()
@@ -286,7 +280,7 @@ class Main:
 
         while run:
             bird_rect = self.bird.get_rect()
-            
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     run = False
@@ -311,10 +305,9 @@ class Main:
                 if event.type == HIT:
                     if not self.game_ended:
                         self.sound.play_sound("hit")
-                    self.bird.update(True)
+                    self.bird.update()
                     self.game_ended = True
                     
-
             if self.game_started:
                 if not self.game_ended:
                     for pipe_pair in self.pipes:
