@@ -3,6 +3,8 @@ import os
 from random import randint
 from abc import ABC, abstractmethod
 
+pygame.mixer.init()
+
 NUMBERS = {"0" : pygame.image.load(os.path.join('assets/UI/Numbers', '0.png')),
            "1" : pygame.image.load(os.path.join('assets/UI/Numbers', '1.png')),
            "2" : pygame.image.load(os.path.join('assets/UI/Numbers', '2.png')),
@@ -19,7 +21,7 @@ FPS = 60
 WHITE = (255, 255, 255)
 HEIGHT = 600
 WIDTH = 400
-GAP = 130
+GAP = 140
 
 PIPE_WIDTH, PIPE_HEIGHT = 65, 400
 BIRD_WIDTH, BIRD_HEIGHT = 42, 29
@@ -36,6 +38,15 @@ BIRD = [pygame.transform.scale(
             pygame.image.load(os.path.join('assets/GameObjects', 'bird-midflip.png')), (BIRD_WIDTH, BIRD_HEIGHT)),
         pygame.transform.scale(
             pygame.image.load(os.path.join('assets/GameObjects', 'bird-upflip.png')), (BIRD_WIDTH, BIRD_HEIGHT))]       
+
+import pygame
+import os
+
+SOUNDS = {'swoosh': pygame.mixer.Sound(os.path.join('assets/SoundEffects', 'swoosh.wav')),
+          'die': pygame.mixer.Sound(os.path.join('assets/SoundEffects', 'die.wav')),
+          'hit': pygame.mixer.Sound(os.path.join('assets/SoundEffects', 'hit.wav')),
+          'point': pygame.mixer.Sound(os.path.join('assets/SoundEffects', 'point.wav')),
+          'wing': pygame.mixer.Sound(os.path.join('assets/SoundEffects', 'wing.wav'))}
 
 # Klasa abstrakcyjna reprezentująca obiekt w grze
 class GameObject(ABC):
@@ -139,29 +150,18 @@ class Pipe(GameObject):
 
     def get_rect(self):
         return self.rect
-
-class Menu:
-    def __init__(self):
-        self.x =  WIDTH // 4
-        self.y = HEIGHT // 4
-        self.height = HEIGHT
-        self.width = WIDTH
-        self.start = pygame.transform.scale(
-            pygame.image.load(os.path.join('assets/UI', 'message.png')), (START_WIDTH, START_HEIGHT))
-        self.game_over = pygame.transform.scale(
-            pygame.image.load(os.path.join('assets/UI', 'gameover.png')), (GAMEOV_WIDTH, GAMEOV_HEIGHT))
-        self.restart_button = pygame.transform.scale(
-            pygame.image.load(os.path.join('assets/UI', 'restart.png')), (BUTTON_WIDTH, BUTTON_HEIGHT))
-        self.restart_rect = pygame.Rect(WIDTH // 2 - BUTTON_WIDTH // 2, HEIGHT // 2, BUTTON_WIDTH, BUTTON_HEIGHT)
-
-    def display_start(self, WIN):
-        WIN.blit(self.start, (WIDTH // 2 - START_WIDTH // 2, HEIGHT // 4  - BIRD_HEIGHT * 2 + 2))
     
-    def display_end(self, WIN):
-        WIN.blit(self.game_over, (WIDTH // 2 - GAMEOV_WIDTH // 2, HEIGHT // 4))
-        WIN.blit(self.restart_button, (WIDTH // 2 - BUTTON_WIDTH // 2, HEIGHT // 2))
-        self.restart_rect = pygame.Rect(WIDTH // 2 - BUTTON_WIDTH // 2, HEIGHT // 2, BUTTON_WIDTH, BUTTON_HEIGHT)
+class Sound:
+    def __init__(self):
+        self.sound = SOUNDS
+    
+    def play_sound(self, name):
+        self.sound[name].play()
 
+#ADD sound
+# add highscore
+# add animation restart/gameover
+    
 class Score:
     def __init__(self, score = 0):
         self.score = score
@@ -169,7 +169,7 @@ class Score:
 
     def update_score(self):
         self.score += 1
-        self.number = self.generate_number()
+        self.number = self.generate_number()   
 
     def generate_number(self):
         num = str(self.score)
@@ -193,6 +193,28 @@ class Score:
     def display_score(self, WIN):
         WIN.blit(self.number, (WIDTH // 2 - 10, 50))
 
+class Menu:
+    def __init__(self):
+        self.x =  WIDTH // 4
+        self.y = HEIGHT // 4
+        self.height = HEIGHT
+        self.width = WIDTH
+        self.start = pygame.transform.scale(
+            pygame.image.load(os.path.join('assets/UI', 'message.png')), (START_WIDTH, START_HEIGHT))
+        self.game_over = pygame.transform.scale(
+            pygame.image.load(os.path.join('assets/UI', 'gameover.png')), (GAMEOV_WIDTH, GAMEOV_HEIGHT))
+        self.restart_button = pygame.transform.scale(
+            pygame.image.load(os.path.join('assets/UI', 'restart.png')), (BUTTON_WIDTH, BUTTON_HEIGHT))
+        self.restart_rect = pygame.Rect(WIDTH // 2 - BUTTON_WIDTH // 2, HEIGHT // 2, BUTTON_WIDTH, BUTTON_HEIGHT)
+
+    def display_start(self, WIN):
+        WIN.blit(self.start, (WIDTH // 2 - START_WIDTH // 2, HEIGHT // 4  - BIRD_HEIGHT * 2 + 2))
+    
+    def display_end(self, WIN):
+        WIN.blit(self.game_over, (WIDTH // 2 - GAMEOV_WIDTH // 2, HEIGHT // 4))
+        WIN.blit(self.restart_button, (WIDTH // 2 - BUTTON_WIDTH // 2, HEIGHT // 2))
+        self.restart_rect = pygame.Rect(WIDTH // 2 - BUTTON_WIDTH // 2, HEIGHT // 2, BUTTON_WIDTH, BUTTON_HEIGHT)
+
 class Main:
     def __init__(self):
         self.background = Background(0, 0)
@@ -200,6 +222,7 @@ class Main:
         self.base = Base(0, HEIGHT - 100)
         self.score = Score()
         self.menu = Menu()
+        self.sound = Sound()
         self.WIN = pygame.display.set_mode((WIDTH, HEIGHT))
         self.pipes = []
         self.generate_pipes()
@@ -218,31 +241,25 @@ class Main:
             pipe_top_rect = pipe_top.get_rect()
             pipe_bot_rect = pipe_bot.get_rect()
     
-            if bird_rect.colliderect(pipe_top_rect):
-                pygame.event.post(pygame.event.Event(HIT))
-
-            if bird_rect.colliderect(pipe_bot_rect):
+            if bird_rect.colliderect(pipe_top_rect) or bird_rect.colliderect(pipe_bot_rect):
                 pygame.event.post(pygame.event.Event(HIT))
                 
         if bird_rect.colliderect(self.base.get_rect()):
             pygame.event.post(pygame.event.Event(HIT))
 
     def display(self):
+        self.background.display(self.WIN)
         if self.game_started:
-            self.background.display(self.WIN)
-            self.bird.display(self.WIN)
             for pipe_pair in self.pipes:
                 pipe_pair[0].display(self.WIN)
                 pipe_pair[1].display(self.WIN)
-            self.base.display(self.WIN)
             self.score.display_score(self.WIN)
         else:
-            self.background.display(self.WIN)
-            self.base.display(self.WIN)
             self.menu.display_start(self.WIN)
-            self.bird.display(self.WIN)
         if self.game_ended:
             self.menu.display_end(self.WIN)
+        self.bird.display(self.WIN)
+        self.base.display(self.WIN)
         pygame.display.update()
 
     def handle_pipes(self):
@@ -252,6 +269,7 @@ class Main:
             if self.pipes[i][0].x == WIDTH // 2 - 1:
                 self.generate_pipes()
                 self.score.update_score()
+                self.sound.play_sound("point")
             elif self.pipes[i][0].x < -65:
                 pipes_to_remove.append(self.pipes[i])
 
@@ -260,10 +278,8 @@ class Main:
         
 
     def main(self):
-
         pygame.init()
         pygame.display.set_caption("Flappy Bird")
-
         clock = pygame.time.Clock()
 
         run = True
@@ -277,31 +293,28 @@ class Main:
                     pygame.quit()
                 
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_SPACE:
-                        if not self.game_started:  # Jeśli gra się nie rozpoczęła, rozpocznij ją po naciśnięciu spacji
-                            self.game_started = True
-                            self.bird.jump()
-                        elif not self.game_ended:
-                            self.bird.jump()
-                    
+                    if event.key == pygame.K_SPACE and not self.game_ended:
+                        if not self.game_started: 
+                            self.game_started = True                            
+                        self.bird.jump()
+                        self.sound.play_sound("wing")
+                                    
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if self.game_ended:
                         mouse_pos = pygame.mouse.get_pos()
                         button_rect = self.menu.restart_rect
-                        print("Piwo")
-                        print(button_rect)
-                        print(mouse_pos)
                         if button_rect.collidepoint(mouse_pos):
                             if pygame.mouse.get_pressed()[0] == 1:
+                                self.sound.play_sound("swoosh")
                                 # Restart the game
                                 self.__init__()
                             
-                           
-                
-
                 if event.type == HIT:
+                    if not self.game_ended:
+                        self.sound.play_sound("hit")
                     self.bird.update(True)
                     self.game_ended = True
+                    
 
             if self.game_started:
                 if not self.game_ended:
@@ -313,14 +326,9 @@ class Main:
                 self.handle_pipes()
                 self.bird.update()
 
-                if self.bird.y >= (HEIGHT - 100 - self.bird.height):
-                    self.game_ended = True
-                    
-            
             self.display()
-
-            
             clock.tick(FPS)
 
-game = Main()
-game.main()
+if __name__ == '__main__':
+    game = Main()
+    game.main()
