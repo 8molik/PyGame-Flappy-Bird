@@ -306,7 +306,6 @@ class Main:
                         if button_rect.collidepoint(mouse_pos):
                             if pygame.mouse.get_pressed()[0] == 1:
                                 self.sound.play_sound("swoosh")
-                                # Restart the game
                                 self.__init__()
                             
                 if event.type == HIT:
