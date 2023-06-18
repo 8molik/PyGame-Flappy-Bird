@@ -7,9 +7,7 @@ pygame.mixer.init()
 
 # Global variables
 FPS = 60
-WHITE = (255, 255, 255)
-HEIGHT = 600
-WIDTH = 400
+WIDTH, HEIGHT = 400, 600
 GAP = 140
 
 PIPE_SPEED = 1.5
