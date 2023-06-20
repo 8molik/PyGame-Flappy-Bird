@@ -11,7 +11,7 @@ To compile the project you need to write 'python main.py' in the game folder. Al
 
 # Class & Methods Description
 ## Diagram
-![image](https://github.com/8molik/PyGame-Flappy-Bird/assets/74592649/01eca676-6d8b-44f3-9246-e475eb97fe97)
+![image](https://github.com/8molik/PyGame-Flappy-Bird/assets/74592649/4f6df7ed-6978-404d-8bd1-f02b26e0dcfa)
 ## Class `GameObject` (abstract class representing game objects)
 ### Methods:
 - `__init__()`: Initializes the game object.
