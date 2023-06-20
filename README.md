@@ -71,5 +71,3 @@ To compile the project you need to write 'python main.py' in the game folder. Al
 - `display()`: Displays the game on the screen.
 - `handle_pipes()`: Handles the movement and generation of pipes.
 - `main()`: Main game loop.
-
-## `__main__` function (entry point)
