@@ -2,6 +2,7 @@ import pygame
 import os
 from random import randint
 from abc import ABC, abstractmethod
+import sys
 
 pygame.mixer.init()
 
@@ -244,15 +245,16 @@ class Main:
     def display(self):
         self.background.display(self.WIN)
         if self.game_started:
+            self.bird.display(self.WIN)
             for pipe_pair in self.pipes:
                 pipe_pair[0].display(self.WIN)
                 pipe_pair[1].display(self.WIN)
             self.score.display_score(self.WIN)
         else:
             self.menu.display_start(self.WIN)
+            self.bird.display(self.WIN)
         if self.game_ended:
             self.menu.display_end(self.WIN)
-        self.bird.display(self.WIN)
         self.base.display(self.WIN)
         pygame.display.update()
 
@@ -282,7 +284,7 @@ class Main:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     run = False
-                    pygame.quit()
+                    sys.exit()
                 
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_SPACE and not self.game_ended:
