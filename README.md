@@ -10,6 +10,8 @@ it is necessary to click restart button with mouse.
 To compile the project you need to write 'python main.py' in the game folder. Although you can run .exe file.
 
 # Class & Methods Description
+## Diagram
+![image](https://github.com/8molik/PyGame-Flappy-Bird/assets/74592649/01eca676-6d8b-44f3-9246-e475eb97fe97)
 ## Class `GameObject` (abstract class representing game objects)
 ### Methods:
 - `__init__()`: Initializes the game object.
