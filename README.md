@@ -2,7 +2,8 @@
 # Project Description
 Flappy Bird is a popular side-scrolling mobile game where the player controls a bird, attempting to navigate it through a series of pipes without colliding with them. The objective is to achieve the highest score possible by successfully maneuvering the bird through the gaps between the pipes.
 Game view:
-![Untitled](https://github.com/8molik/pygame-flappy-bird/assets/74592649/161030ec-e78a-460a-af38-2eef0c3bc6c4)
+![Untitled](https://github.com/8molik/pygame-flappy-bird/assets/74592649/a3ab024d-7f62-4119-a30c-b538e21793dc)
+
 
 ## Gameplay
 Upon starting the game, the player is presented with the start screen. In order to start playing, and continue to jump the player needs to press 'space'. To restart the game
